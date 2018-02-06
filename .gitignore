@@ -1,0 +1,13 @@
+# Ignore images
+*.png
+
+# Ignore topographic and setup data (too large).
+share/topography
+share/setup
+
+# Ignore events.
+share/events
+
+# Ignore bytecode
+*.pyc
+*.pyo
