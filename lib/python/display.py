@@ -84,11 +84,21 @@ class Display:
         zt = numpy.zeros((len(yt), len(xt)))
         for i, yi in enumerate(yt):
             for j, xj in enumerate(xt):
-                zt[i, j] = self._topo.ground_altitude(
-                    xj * 1E+03, yi * 1E+03) * 1E-03
-        plt.figure()
+                try:
+                    zt[i, j] = self._topo.ground_altitude(
+                        xj * 1E+03, yi * 1E+03) * 1E-03
+                except TurtleError:
+                    zt[i, j] = 0.
+        fig = plt.figure()
         plt.pcolor(xt, yt, zt, cmap="terrain", alpha=0.75)
         plt.colorbar()
+
+        def onclick(event):
+            x, y = event.xdata * 1E+03, event.ydata * 1E+03
+            z = self._topo.ground_altitude(x, y)
+            print "{:9f}, {:.9f}, {:.0f}".format(
+                *self._topo.local_to_lla((x, y, z)))
+        cid = fig.canvas.mpl_connect("button_press_event", onclick)
 
         # Plot the decay
         plt.plot(x[0], y[0], "ro")
@@ -102,11 +112,11 @@ class Display:
 
         plt.axis((xmin, xmax, ymin, ymax))
         plt.xlabel("northing, $x$ (km)")
-        plt.ylabel("easting, $y$ (km)")
+        plt.ylabel("westing, $y$ (km)")
 
         # Profile view
         def plot_ray(s0, s1, mrk, clr):
-            s = numpy.linspace(s0, s1, 1001)
+            s = numpy.linspace(s0, s1, 10001)
             zt, zr = numpy.zeros(s.shape), numpy.zeros(s.shape)
             for i, si in enumerate(s):
                 xi, yi, zi = r0 + si * u
@@ -119,7 +129,7 @@ class Display:
             plt.plot(s, zt, "k-")
             plt.plot(s0, zr[0], mrk)
             plt.plot(s, zr, clr)
-        plt.figure()
+        fig = plt.figure()
         sa = numpy.dot(ra - r0, u)
         zcmax = min(max(sa) + 5, zcmax)
         plot_ray(0., zcmin, "ro", "r-")
@@ -130,5 +140,13 @@ class Display:
         plt.axis((0., zcmax, zmin, zmax))
         plt.xlabel("distance to decay, $s$ (km)")
         plt.ylabel("altitude, $z$ (km)")
+
+        def onclick(event):
+            s, z = event.xdata, event.ydata * 1E+03
+            x = (r0[0] + s * u[0]) * 1E+03
+            y = (r0[1] + s * u[1]) * 1E+03
+            print "{:9f}, {:.9f}, {:.0f}".format(
+                *self._topo.local_to_lla((x, y, z)))
+        cid = fig.canvas.mpl_connect("button_press_event", onclick)
 
         plt.show()
